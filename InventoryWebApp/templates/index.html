@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory App</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h1>Stok Yönetimi Uygulaması</h1>
+    <form id="add-item-form">
+        <label for="item-name">Name:</label>
+        <input type="text" id="item-name" name="name" required>
+        <label for="item-quantity">Quantity:</label>
+        <input type="number" id="item-quantity" name="quantity" required>
+        <button type="submit">Add Item</button>
+    </form>
+    <hr>
+    <table id="inventory-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(function() {
+            // Get the inventory data and populate the table
+            $.get('/inventory', function(data) {
+                var inventory = data;
+                var tbody = $('#inventory-table tbody');
+                for (var i = 0; i < inventory.length; i++) {
+                    var item = inventory[i];
+                    var tr = $('<tr></tr>');
+                    var nameTd = $('<td></td>').text(item.name);
+                    var quantityTd = $('<td></td>').text(item.quantity);
+                    var deleteTd = $('<td></td>');
+                    var deleteBtn = $('<button>Delete</button>');
+                    deleteBtn.click(deleteItem.bind(null, item.name));
+                    deleteTd.append(deleteBtn);
+                    tr.append(nameTd);
+                    tr.append(quantityTd);
+                    tr.append(deleteTd);
+                    tbody.append(tr);
+                }
+            });
+            // Handle the form submit event
+            $('#add-item-form').submit(function(event) {
+                event.preventDefault();
+                var form = $(this);
+                var name = form.find('#item-name').val();
+                var quantity = form.find('#item-quantity').val();
+                $.post('/inventory', {'name': name, 'quantity': quantity})
+                    .done(function() {
+                        location.reload();
+                    })
+                    .fail(function(response) {
+                        alert(response.responseJSON.error);
+                    });
+            });
+            // Function to delete an item
+            function deleteItem(name) {
+                if (confirm('Are you sure you want to delete this item?')) {
+                    $.ajax({
+                        url: '/inventory/' + name,
+                        type: 'DELETE',
+                        success: function() {
+                            location.reload();
+                        },
+                        error: function(response) {
+                            alert(response.responseJSON.error);
+                        }
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+</html>
