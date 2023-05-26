@@ -19,7 +19,8 @@ def get_inventory():
         for item in db.InventoryApp.find():
             inventory.append({
                 'name': item['name'],
-                'quantity': item['quantity']
+                'quantity': item['quantity'],
+                'unit': item['unit']
             })
         return jsonify(inventory)
     except PyMongoError as e:
@@ -31,14 +32,17 @@ def add_item():
     try:
         name = request.json['name']
         quantity = request.json['quantity']
+        unit = request.json['unit']
         if not name:
             return jsonify({'error': 'Name is required'}), 400
         if not isinstance(quantity, int):
             return jsonify({'error': 'Quantity must be an integer'}), 400
-        db.InventoryApp.insert_one({'name': name, 'quantity': quantity})
+        if not unit:
+            return jsonify({'error': 'Unit is required'}), 400
+        db.InventoryApp.insert_one({'name': name, 'quantity': quantity, 'unit': unit})
         return jsonify({'message': 'Item added successfully'})
     except KeyError:
-        return jsonify({'error': 'Name and quantity are required in the request body'}), 400
+        return jsonify({'error': 'Name, quantity, and unit are required in the request body'}), 400
     except PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
@@ -47,14 +51,15 @@ def add_item():
 def update_item(name):
     try:
         quantity = request.json['quantity']
+        unit = request.json['unit']
         if not isinstance(quantity, int):
             return jsonify({'error': 'Quantity must be an integer'}), 400
-        result = db.InventoryApp.update_one({'name': name}, {'$set': {'quantity': quantity}})
+        result = db.InventoryApp.update_one({'name': name}, {'$set': {'quantity': quantity, 'unit': unit}})
         if result.matched_count == 0:
             return jsonify({'error': f"No item found with name '{name}'"}), 404
         return jsonify({'message': 'Item updated successfully'})
     except KeyError:
-        return jsonify({'error': 'Quantity is required in the request body'}), 400
+        return jsonify({'error': 'Quantity and unit are required in the request body'}), 400
     except PyMongoError as e:
         return jsonify({'error': str(e)}), 500
 
